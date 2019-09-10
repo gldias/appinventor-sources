@@ -460,8 +460,10 @@ public class YaVersion {
   // - SPEECHRECOGNIZER_COMPONENT_VERSION was incremented to 2
   // For YOUNG_ANDROID_VERSION 186:
   // - BLOCKS_LANGUAGE_VERSION was incremented to 27
+  // For YOUNG_ANDROID_VERSION 187:
+  // - Added pressure sensor
 
-  public static final int YOUNG_ANDROID_VERSION = 186;
+  public static final int YOUNG_ANDROID_VERSION = 187;
 
   // ............................... Blocks Language Version Number ...............................
 
@@ -1229,6 +1231,9 @@ public class YaVersion {
 
   //For PROXIMITYSENSOR_COMPONENT_VERSION: Initial Version
   public static final int PROXIMITYSENSOR_COMPONENT_VERSION = 1;
+
+  //For BAROMETER_COMPONENT_VERSION: Initial Version
+  public static final int BAROMETER_COMPONENT_VERION = 1;
 
   // Rendezvous Server Location
 
