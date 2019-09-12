@@ -90,6 +90,12 @@ public class BarometerSensor extends AndroidNonvisibleComponent
         sensorManager.registerListener(this, barometerSensor, SensorManager.SENSOR_DELAY_NORMAL);
     }
 
+    // Assumes that sensorManager has been initialized, which happens in constructor
+    private void stopListening() {
+        sensorManager.unregisterListener(this);
+        currentMbar = 0f;
+    }
+
     /**
      * Specifies whether the sensor should generate events.  If true,
      * the sensor will generate events.  Otherwise, no events are
@@ -102,21 +108,14 @@ public class BarometerSensor extends AndroidNonvisibleComponent
             defaultValue = "True")
     @SimpleProperty
     public void Enabled(boolean enabled) {
-        if (this.enabled == enabled) {
-            return;
+        if (this.enabled != enabled) {
+            this.enabled = enabled;
+            if (enabled) {
+                startListening();
+            } else {
+                stopListening();
+            }
         }
-        this.enabled = enabled;
-        if (enabled) {
-            startListening();
-        } else {
-            stopListening();
-        }
-    }
-
-    // Assumes that sensorManager has been initialized, which happens in constructor
-    private void stopListening() {
-        sensorManager.unregisterListener(this);
-        currentMbar = 0f;
     }
 
     /**
@@ -128,8 +127,7 @@ public class BarometerSensor extends AndroidNonvisibleComponent
     @SimpleProperty(
             category = PropertyCategory.BEHAVIOR)
     public boolean Available() {
-        List<Sensor> sensors = sensorManager.getSensorList(Sensor.TYPE_PRESSURE);
-        return (sensors.size() > 0);
+        return (sensorManager.getSensorList(Sensor.TYPE_PRESSURE).size() > 0);
     }
 
     /**
@@ -142,13 +140,13 @@ public class BarometerSensor extends AndroidNonvisibleComponent
     @SimpleProperty(
             category = PropertyCategory.BEHAVIOR)
     public boolean Enabled() {
-        return this.enabled;
+        return enabled;
     }
 
     @SimpleProperty(
             category = PropertyCategory.BEHAVIOR)
     public float mbar() {
-        return this.currentMbar;
+        return currentMbar;
     }
 
     /**
