@@ -1,5 +1,5 @@
 
-package com.google.appinventor.components.runtime;
+package com.rit.appinventor.components.runtime;
 
 import com.google.appinventor.components.annotations.DesignerComponent;
 import com.google.appinventor.components.annotations.DesignerProperty;
@@ -17,8 +17,7 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.util.Log;
-
-import java.util.List;
+import com.google.appinventor.components.runtime.*;
 
 @DesignerComponent(version = YaVersion.BAROMETER_COMPONENT_VERION,
         description = "Non-visible component that can detect shaking and " +
@@ -26,7 +25,7 @@ import java.util.List;
         category = ComponentCategory.SENSORS,
         nonVisible = true,
         iconName = "images/accelerometersensor.png")
-@SimpleObject
+@SimpleObject(external = true)
 public class BarometerSensor extends AndroidNonvisibleComponent
         implements OnStopListener, OnResumeListener, SensorComponent, SensorEventListener, Deleteable {
 
