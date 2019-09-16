@@ -1,15 +1,4 @@
-
 package com.rit.appinventor.components.runtime;
-
-import com.google.appinventor.components.annotations.DesignerComponent;
-import com.google.appinventor.components.annotations.DesignerProperty;
-import com.google.appinventor.components.annotations.PropertyCategory;
-import com.google.appinventor.components.annotations.SimpleEvent;
-import com.google.appinventor.components.annotations.SimpleObject;
-import com.google.appinventor.components.annotations.SimpleProperty;
-import com.google.appinventor.components.common.ComponentCategory;
-import com.google.appinventor.components.common.PropertyTypeConstants;
-import com.google.appinventor.components.common.YaVersion;
 
 import android.content.Context;
 import android.hardware.Sensor;
@@ -17,6 +6,10 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.util.Log;
+import com.google.appinventor.components.annotations.*;
+import com.google.appinventor.components.common.ComponentCategory;
+import com.google.appinventor.components.common.PropertyTypeConstants;
+import com.google.appinventor.components.common.YaVersion;
 import com.google.appinventor.components.runtime.*;
 
 @DesignerComponent(version = YaVersion.BAROMETER_COMPONENT_VERION,
@@ -24,17 +17,14 @@ import com.google.appinventor.components.runtime.*;
                 "measure barometer ",
         category = ComponentCategory.SENSORS,
         nonVisible = true,
-        iconName = "images/accelerometersensor.png")
+        iconName = "images/barometersensor.png")
 @SimpleObject(external = true)
 public class BarometerSensor extends AndroidNonvisibleComponent
         implements OnStopListener, OnResumeListener, SensorComponent, SensorEventListener, Deleteable {
 
     private final static String LOG_TAG = "BarometerSensor";
-    private final static boolean DEBUG = true;
-
-    // Indicates whether the barometer should generate events
-    private boolean enabled;
     private final SensorManager sensorManager;
+    private boolean isEnabled;
     private Sensor barometerSensor;
     private float currentMbar = 0f;
 
@@ -51,30 +41,29 @@ public class BarometerSensor extends AndroidNonvisibleComponent
 
     @Override
     public void onDelete() {
-        if (enabled) {
+        if (isEnabled) {
             stopListening();
         }
     }
 
     @Override
     public void onResume() {
-        if (enabled) {
+        if (isEnabled) {
             startListening();
         }
     }
 
     @Override
     public void onStop() {
-        if (enabled) {
+        if (isEnabled) {
             stopListening();
         }
     }
 
     @Override
     public void onSensorChanged(SensorEvent sensorEvent) {
-        if (enabled) {
-            final float[] values = sensorEvent.values.clone();
-            BarometerChanged(values[0]);
+        if (isEnabled) {
+            BarometerChanged(sensorEvent.values[0]);
         }
     }
 
@@ -83,13 +72,16 @@ public class BarometerSensor extends AndroidNonvisibleComponent
         // TODO(markf): Figure out if we actually need to do something here.
     }
 
-
-    // Assumes that sensorManager has been initialized, which happens in constructor
+    /**
+     * Assumes that sensorManager has been initialized, which happens in constructor
+     */
     private void startListening() {
         sensorManager.registerListener(this, barometerSensor, SensorManager.SENSOR_DELAY_NORMAL);
     }
 
-    // Assumes that sensorManager has been initialized, which happens in constructor
+    /**
+     * Assumes that sensorManager has been initialized, which happens in constructor
+     */
     private void stopListening() {
         sensorManager.unregisterListener(this);
         currentMbar = 0f;
@@ -100,15 +92,15 @@ public class BarometerSensor extends AndroidNonvisibleComponent
      * the sensor will generate events.  Otherwise, no events are
      * generated even if the device is accelerated or shaken.
      *
-     * @param enabled  {@code true} enables sensor event generation,
-     *                 {@code false} disables it
+     * @param enabled {@code true} enables sensor event generation,
+     *                {@code false} disables it
      */
     @DesignerProperty(editorType = PropertyTypeConstants.PROPERTY_TYPE_BOOLEAN,
             defaultValue = "True")
     @SimpleProperty
     public void Enabled(boolean enabled) {
-        if (this.enabled != enabled) {
-            this.enabled = enabled;
+        if (this.isEnabled != enabled) {
+            this.isEnabled = enabled;
             if (enabled) {
                 startListening();
             } else {
@@ -121,7 +113,7 @@ public class BarometerSensor extends AndroidNonvisibleComponent
      * Available property getter method (read-only property).
      *
      * @return {@code true} indicates that an accelerometer sensor is available,
-     *         {@code false} that it isn't
+     * {@code false} that it isn't
      */
     @SimpleProperty(
             category = PropertyCategory.BEHAVIOR)
@@ -131,15 +123,15 @@ public class BarometerSensor extends AndroidNonvisibleComponent
 
     /**
      * If true, the sensor will generate events.  Otherwise, no events
-     * are generated even if the device is accelerated or shaken.
+     * are generated
      *
      * @return {@code true} indicates that the sensor generates events,
-     *         {@code false} that it doesn't
+     * {@code false} that it doesn't
      */
     @SimpleProperty(
             category = PropertyCategory.BEHAVIOR)
     public boolean Enabled() {
-        return enabled;
+        return isEnabled;
     }
 
     @SimpleProperty(
