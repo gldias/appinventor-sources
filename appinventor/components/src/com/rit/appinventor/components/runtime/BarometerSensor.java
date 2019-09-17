@@ -62,8 +62,7 @@ public class BarometerSensor extends AndroidNonvisibleComponent
     @Override
     public void onSensorChanged(SensorEvent sensorEvent) {
         if (isEnabled) {
-            this.currentMillibar = sensorEvent.values[0];
-            BarometerChanged();
+            BarometerChanged(sensorEvent.values[0]);
         }
     }
 
@@ -144,7 +143,8 @@ public class BarometerSensor extends AndroidNonvisibleComponent
      * Indicates the barometer changed.
      */
     @SimpleEvent
-    public void BarometerChanged() {
+    public void BarometerChanged(float mbar) {
+        this.currentMbar = mbar;
         EventDispatcher.dispatchEvent(this, "BarometerChanged", this.currentMillibar);
     }
 }
