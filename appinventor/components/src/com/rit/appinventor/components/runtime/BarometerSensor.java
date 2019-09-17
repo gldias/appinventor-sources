@@ -144,7 +144,7 @@ public class BarometerSensor extends AndroidNonvisibleComponent
      */
     @SimpleEvent
     public void BarometerChanged(float mbar) {
-        this.currentMbar = mbar;
+        this.currentMillibar = mbar;
         EventDispatcher.dispatchEvent(this, "BarometerChanged", this.currentMillibar);
     }
 }
