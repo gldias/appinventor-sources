@@ -13,11 +13,10 @@ import com.google.appinventor.components.common.YaVersion;
 import com.google.appinventor.components.runtime.*;
 
 @DesignerComponent(version = YaVersion.BAROMETER_COMPONENT_VERION,
-        description = "Non-visible component that can detect shaking and " +
-                "measure barometer ",
+        description = "Non-visible component that can collect barometer pressure data",
         category = ComponentCategory.SENSORS,
         nonVisible = true,
-        iconName = "images/barometersensor.png")
+        iconName = "images/accelerometersensor.png")
 @SimpleObject(external = true)
 public class BarometerSensor extends AndroidNonvisibleComponent
         implements OnStopListener, OnResumeListener, SensorComponent, SensorEventListener, Deleteable {
@@ -26,7 +25,7 @@ public class BarometerSensor extends AndroidNonvisibleComponent
     private final SensorManager sensorManager;
     private boolean isEnabled;
     private Sensor barometerSensor;
-    private float currentMbar = 0f;
+    private float currentMillibar = 0f;
 
     public BarometerSensor(ComponentContainer container) {
         super(container.$form());
@@ -63,7 +62,8 @@ public class BarometerSensor extends AndroidNonvisibleComponent
     @Override
     public void onSensorChanged(SensorEvent sensorEvent) {
         if (isEnabled) {
-            BarometerChanged(sensorEvent.values[0]);
+            this.currentMillibar = sensorEvent.values[0];
+            BarometerChanged();
         }
     }
 
@@ -84,7 +84,7 @@ public class BarometerSensor extends AndroidNonvisibleComponent
      */
     private void stopListening() {
         sensorManager.unregisterListener(this);
-        currentMbar = 0f;
+        currentMillibar = 0f;
     }
 
     /**
@@ -136,16 +136,15 @@ public class BarometerSensor extends AndroidNonvisibleComponent
 
     @SimpleProperty(
             category = PropertyCategory.BEHAVIOR)
-    public float mbar() {
-        return currentMbar;
+    public float Millibar() {
+        return currentMillibar;
     }
 
     /**
      * Indicates the barometer changed.
      */
     @SimpleEvent
-    public void BarometerChanged(float mbar) {
-        this.currentMbar = mbar;
-        EventDispatcher.dispatchEvent(this, "BarometerChanged", this.currentMbar);
+    public void BarometerChanged() {
+        EventDispatcher.dispatchEvent(this, "BarometerChanged", this.currentMillibar);
     }
 }

@@ -591,10 +591,4 @@ public interface Images extends Resources {
    */
   @Source("com/google/appinventor/images/rectangle.png")
   ImageResource rectangle();
-
-  /**
-   * Designer palette item: BarometerSensor
-   */
-  @Source("com/rit/appinventor/images/barometersensor.png")
-  ImageResource barometersensor();
 }
