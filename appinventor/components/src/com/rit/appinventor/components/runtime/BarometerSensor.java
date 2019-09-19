@@ -25,6 +25,7 @@ public class BarometerSensor extends AndroidNonvisibleComponent
         implements OnStopListener, OnResumeListener, SensorComponent, SensorEventListener, Deleteable {
 
     private final static String LOG_TAG = "BarometerSensor";
+    private final int PRESSURE_SENSOR_DATA_INDEX = 0;
     private final SensorManager sensorManager;
     private boolean isEnabled;
     private Sensor barometerSensor = null;
@@ -34,7 +35,7 @@ public class BarometerSensor extends AndroidNonvisibleComponent
         super(container.$form());
 
         sensorManager = (SensorManager) container.$context().getSystemService(Context.SENSOR_SERVICE);
-        if(Available()) {
+        if (Available()) {
             barometerSensor = sensorManager.getDefaultSensor(Sensor.TYPE_PRESSURE);
         }
         form.registerForOnResume(this);
@@ -60,7 +61,7 @@ public class BarometerSensor extends AndroidNonvisibleComponent
     @Override
     public void onSensorChanged(SensorEvent sensorEvent) {
         if (barometerSensor != null) {
-            BarometerChanged(sensorEvent.values[0]);
+            BarometerChanged(sensorEvent.values[PRESSURE_SENSOR_DATA_INDEX]);
         }
     }
 
@@ -98,7 +99,9 @@ public class BarometerSensor extends AndroidNonvisibleComponent
      */
     @DesignerProperty(editorType = PropertyTypeConstants.PROPERTY_TYPE_BOOLEAN,
             defaultValue = "True")
-    @SimpleProperty
+    @SimpleProperty(
+            description = "Start the barometer with True and Stop with False"
+    )
     public void Enabled(boolean enabled) {
         if (this.isEnabled != enabled && barometerSensor != null) {
             this.isEnabled = enabled;
@@ -117,6 +120,7 @@ public class BarometerSensor extends AndroidNonvisibleComponent
      * {@code false} that it isn't
      */
     @SimpleProperty(
+            description = "Returns true if device has a barometer sensor",
             category = PropertyCategory.BEHAVIOR)
     public boolean Available() {
         return (sensorManager.getSensorList(Sensor.TYPE_PRESSURE).size() > 0);
@@ -130,12 +134,14 @@ public class BarometerSensor extends AndroidNonvisibleComponent
      * {@code false} that it doesn't
      */
     @SimpleProperty(
+            description = "If true, the sensor is generating events",
             category = PropertyCategory.BEHAVIOR)
     public boolean Enabled() {
         return isEnabled;
     }
 
     @SimpleProperty(
+            description = "Current millibar of barometer",
             category = PropertyCategory.BEHAVIOR)
     public float Millibar() {
         return currentMillibar;
@@ -144,7 +150,9 @@ public class BarometerSensor extends AndroidNonvisibleComponent
     /**
      * Indicates the barometer changed.
      */
-    @SimpleEvent
+    @SimpleEvent(
+            description = "Event when the barometer sends new data"
+    )
     public void BarometerChanged(float millibar) {
         this.currentMillibar = millibar;
         EventDispatcher.dispatchEvent(this, "BarometerChanged", this.currentMillibar);
