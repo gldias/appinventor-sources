@@ -5,6 +5,8 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.os.Build;
+import android.support.annotation.RequiresApi;
 import android.util.Log;
 import com.google.appinventor.components.annotations.*;
 import com.google.appinventor.components.common.ComponentCategory;
@@ -12,11 +14,12 @@ import com.google.appinventor.components.common.PropertyTypeConstants;
 import com.google.appinventor.components.common.YaVersion;
 import com.google.appinventor.components.runtime.*;
 
+@RequiresApi(api = Build.VERSION_CODES.CUPCAKE)
 @DesignerComponent(version = YaVersion.BAROMETER_COMPONENT_VERION,
         description = "Non-visible component that can collect barometer pressure data",
-        category = ComponentCategory.SENSORS,
+        category = ComponentCategory.EXTENSION,
         nonVisible = true,
-        iconName = "images/accelerometersensor.png")
+        iconName = "images/extension.png")
 @SimpleObject(external = true)
 public class BarometerSensor extends AndroidNonvisibleComponent
         implements OnStopListener, OnResumeListener, SensorComponent, SensorEventListener, Deleteable {
@@ -24,44 +27,39 @@ public class BarometerSensor extends AndroidNonvisibleComponent
     private final static String LOG_TAG = "BarometerSensor";
     private final SensorManager sensorManager;
     private boolean isEnabled;
-    private Sensor barometerSensor;
+    private Sensor barometerSensor = null;
     private float currentMillibar = 0f;
 
     public BarometerSensor(ComponentContainer container) {
         super(container.$form());
 
         sensorManager = (SensorManager) container.$context().getSystemService(Context.SENSOR_SERVICE);
-        barometerSensor = sensorManager.getDefaultSensor(Sensor.TYPE_PRESSURE);
+        if(Available()) {
+            barometerSensor = sensorManager.getDefaultSensor(Sensor.TYPE_PRESSURE);
+        }
         form.registerForOnResume(this);
         form.registerForOnStop(this);
-        Enabled(true);
         Log.d(LOG_TAG, "barometer created");
     }
 
     @Override
     public void onDelete() {
-        if (isEnabled) {
-            stopListening();
-        }
+        stopListening();
     }
 
     @Override
     public void onResume() {
-        if (isEnabled) {
-            startListening();
-        }
+        startListening();
     }
 
     @Override
     public void onStop() {
-        if (isEnabled) {
-            stopListening();
-        }
+        stopListening();
     }
 
     @Override
     public void onSensorChanged(SensorEvent sensorEvent) {
-        if (isEnabled) {
+        if (barometerSensor != null) {
             BarometerChanged(sensorEvent.values[0]);
         }
     }
@@ -75,15 +73,19 @@ public class BarometerSensor extends AndroidNonvisibleComponent
      * Assumes that sensorManager has been initialized, which happens in constructor
      */
     private void startListening() {
-        sensorManager.registerListener(this, barometerSensor, SensorManager.SENSOR_DELAY_NORMAL);
+        if (barometerSensor != null) {
+            sensorManager.registerListener(this, barometerSensor, SensorManager.SENSOR_DELAY_NORMAL);
+        }
     }
 
     /**
      * Assumes that sensorManager has been initialized, which happens in constructor
      */
     private void stopListening() {
-        sensorManager.unregisterListener(this);
-        currentMillibar = 0f;
+        if (barometerSensor != null) {
+            sensorManager.unregisterListener(this);
+            currentMillibar = 0f;
+        }
     }
 
     /**
@@ -98,7 +100,7 @@ public class BarometerSensor extends AndroidNonvisibleComponent
             defaultValue = "True")
     @SimpleProperty
     public void Enabled(boolean enabled) {
-        if (this.isEnabled != enabled) {
+        if (this.isEnabled != enabled && barometerSensor != null) {
             this.isEnabled = enabled;
             if (enabled) {
                 startListening();
@@ -143,8 +145,8 @@ public class BarometerSensor extends AndroidNonvisibleComponent
      * Indicates the barometer changed.
      */
     @SimpleEvent
-    public void BarometerChanged(float mbar) {
-        this.currentMillibar = mbar;
+    public void BarometerChanged(float millibar) {
+        this.currentMillibar = millibar;
         EventDispatcher.dispatchEvent(this, "BarometerChanged", this.currentMillibar);
     }
 }
