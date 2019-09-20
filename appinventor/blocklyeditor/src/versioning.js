@@ -1213,6 +1213,14 @@ Blockly.Versioning.AllUpgradeMaps =
 
   }, // End Ball upgraders
 
+
+  "BarometerSensor": {
+
+    // This is initial version. Placeholder for future upgrades
+    1: "noUpgrade"
+
+  },
+
   "BarcodeScanner": {
 
     // AI1: No changes required

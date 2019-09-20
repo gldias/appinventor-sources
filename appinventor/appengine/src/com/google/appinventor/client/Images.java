@@ -591,5 +591,4 @@ public interface Images extends Resources {
    */
   @Source("com/google/appinventor/images/rectangle.png")
   ImageResource rectangle();
-
 }
