@@ -69,7 +69,7 @@ public class SoundPressureLevel extends AndroidNonvisibleComponent
                     if (checkPermissions()) {
                         if (getRecording()) {
                             Log.d(LOG_TAG, "spl thread isRecording");
-                            final Pair<short[], Integer> tuple = analyzeSoundData();
+                            final Pair<Complex[], Integer> tuple = analyzeSoundData();
                             form.runOnUiThread(new Runnable() {
                                 @Override
                                 public void run() {
@@ -139,10 +139,10 @@ public class SoundPressureLevel extends AndroidNonvisibleComponent
         }
     }
 
-    public void onSoundPressureLevelChanged(Pair<short[], Integer> tuple) {
+    public void onSoundPressureLevelChanged(Pair<Complex[], Integer> tuple) {
         if (isEnabled) {
             Log.d(LOG_TAG, "spl onSoundPressueLevelChange");
-            short[] soundData = tuple.first;
+            Complex[] soundData = tuple.first;
             Integer length = tuple.second;
             double data = 0;
 
@@ -174,10 +174,10 @@ public class SoundPressureLevel extends AndroidNonvisibleComponent
      * @param soundData
      * @return
      */
-    private double[] convertMicVoltageToPressure(short[] soundData) {
+    private double[] convertMicVoltageToPressure(Complex[] soundData) {
         double[] soundPressures = new double[soundData.length];
         for (int i = 0; i < soundData.length; i++) {
-            soundPressures[i] = soundData[i]/51805.5336;
+            soundPressures[i] = soundData[i].re()/51805.5336;
         }
         return soundPressures;
     }
@@ -214,12 +214,18 @@ public class SoundPressureLevel extends AndroidNonvisibleComponent
         return dBs;
     }
 
-    public Pair<short[], Integer> analyzeSoundData() {
+    public Pair<Complex[], Integer> analyzeSoundData() {
         Log.d(LOG_TAG, "spl analyzeSoundData");
         short spldata = 0;
         short recAudioData [] = new short[minBufferSize];
         int length = recorder.read(recAudioData, 0, minBufferSize);
-        Pair<short[], Integer> tuple = new Pair<short[],Integer>(recAudioData,length);
+
+        //Translate shorts recieved to Complex numbers for FFT.
+        Complex complexAudioRecordData [] = new Complex[minBufferSize];
+        for (int i = 0; i <recAudioData.length; i++) {
+            complexAudioRecordData[i] = new Complex((double)recAudioData[i],0.0);
+        }
+        Pair<Complex[], Integer> tuple = new Pair<Complex[],Integer>(complexAudioRecordData,length);
         return tuple;
     }
 
