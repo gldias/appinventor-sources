@@ -27,6 +27,8 @@ package com.rit.appinventor.components.runtime;
  *  |a|          = 7.810249675906654
  *  tan(a)       = -6.685231390246571E-6 + 1.0000103108981198i
  *
+ * Courtesy of Robert Sedgewick and Kevin Wayne
+ * Original source can be found at https://introcs.cs.princeton.edu/java/97data/Complex.java.html
  ******************************************************************************/
 
 //import java.util.Objects;

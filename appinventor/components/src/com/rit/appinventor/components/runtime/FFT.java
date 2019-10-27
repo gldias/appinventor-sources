@@ -23,6 +23,8 @@ package com.rit.appinventor.components.runtime;
  *  For an in-place radix 2 Cooley-Tukey FFT, see
  *  https://introcs.cs.princeton.edu/java/97data/InplaceFFT.java.html
  *
+ * Courtesy of Robert Sedgewick and Kevin Wayne
+ * Original source can be found at https://introcs.cs.princeton.edu/java/97data/FFT.java.html
  ******************************************************************************/
 
 public class FFT {

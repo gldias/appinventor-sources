@@ -44,6 +44,7 @@ public class SoundPressureLevel extends AndroidNonvisibleComponent
     Handler splHandler;
     private static final int minBufferSize = AudioRecord.getMinBufferSize(sampleRateInHz,channelConfig,audioFormat);
     private double currentSoundPressureLevel = 0;
+    private double currentWeightedSoundPressureLevel = 0;
     private boolean isListening;
     Thread soundChecker;
     private boolean threadSuspended;
@@ -145,6 +146,56 @@ public class SoundPressureLevel extends AndroidNonvisibleComponent
             Complex[] soundData = tuple.first;
             Integer length = tuple.second;
             double data = 0;
+            int lengthOfFFT = 1024; // Needs to be of the form 2^n
+            Complex[] toFFT = new Complex[lengthOfFFT];
+            Complex[] FFTOutput = null;
+            double[] weightedBins = new double[lengthOfFFT];
+            double freqOfBin = 0.0;
+            double[] effectiveSPLs = new double[soundData.length/lengthOfFFT];
+            boolean failedFFT = false;
+
+            int i = 0;
+            int numEffectiveSPLs = 0;
+            while (i+lengthOfFFT<=soundData.length){ //Only use soundData if there's enough left.
+                for (int j = 0; j < lengthOfFFT; j++) {
+                    Log.d(LOG_TAG,String.format("spl sound data %f",soundData[i].re()));
+                    toFFT[j] = soundData[i+j];
+                }
+                try {
+                    FFTOutput = FFT.fft(toFFT);
+
+                    for (int j = 0; j < toFFT.length; j++) {
+                        freqOfBin = ((double)j/(double)lengthOfFFT)*(double)sampleRateInHz;
+                        weightedBins[j] = 2*magnitudeOfImaginaryNumber(toFFT[j])*
+                                calcCWeightCoefficient(freqOfBin); //TODO Currently hardcoded as C-Weighted as that's closest to no weighting. Need to find a dynamic way to switch between the two.
+                    }
+
+                    double sumOfEnergy = 0.0;
+                    for (int j = 0; j < weightedBins.length; j++) {
+                        convertToSummedEnergy(weightedBins[j],sumOfEnergy);
+                    }
+
+                    //SPL of this segment of sound recorded.
+                    double effectiveSPL = convertEnergyToEffectiveSPL(sumOfEnergy);
+
+                    //Store to average later.
+                    effectiveSPLs[numEffectiveSPLs]=effectiveSPL;
+
+                    //Increment counters.
+                    numEffectiveSPLs++;
+                    i+=lengthOfFFT; //Move to the front of the next clip of sound to FFT.
+                } catch (IllegalArgumentException e){
+                    Log.d(LOG_TAG,e.getMessage());
+                    failedFFT = true;
+                }
+            }
+
+            if(!failedFFT) {
+                double weightedDb = calcRootMeanSquare(effectiveSPLs, effectiveSPLs.length);
+                WeightedSoundPressureLevelChanged(weightedDb);
+            }
+
+            //TODO The below is old code for comparison to the weighted SPL. Delete once the aboved is confirmed to work.
 
             //Convert data from mic to pressure in pascals.
             double[] soundSamplePressure = convertMicVoltageToPressure(soundData);
@@ -165,6 +216,70 @@ public class SoundPressureLevel extends AndroidNonvisibleComponent
     }
 
     /**
+     * Find the magnitude of a complex number.
+     * (real^2+imaginary^2)^0.5
+     * @param complex
+     * @return
+     */
+    private double magnitudeOfImaginaryNumber(Complex complex){
+        return Math.sqrt(Math.pow(complex.re(),2)+Math.pow(complex.im(),2));
+    }
+
+    /**
+     * Calculate the Coefficient for A-Weighting an FFT Frequency bin.
+     * https://en.wikipedia.org/wiki/A-weighting#Function_realisation_of_some_common_weightings
+     * @param Hz
+     * @return
+     */
+    private double calcAWeightCoefficient(double Hz){ //TODO Figure out what magnitude the freq needs to be in, Hz/KHz/MHz
+        double R_a = (Math.pow(12194,2)*Math.pow(Hz,4))/
+                ((Math.pow(Hz,2)+Math.pow(20.6,6))*
+                        Math.sqrt((Math.pow(Hz,2)+Math.pow(107.7,2))*(Math.pow(Hz,2)+Math.pow(737.9,2)))*
+                        Math.pow(Hz,2)+Math.pow(12914,2));
+//        double A_f = 20*Math.log10(R_a)+2.0; // TODO Figure out if we need to return A_f or R_a
+        return R_a;
+    }
+
+    /**
+     * Calculate the Coefficient for A-Weighting an FFT Frequency bin.
+     * https://en.wikipedia.org/wiki/A-weighting#Function_realisation_of_some_common_weightings
+     * @param Hz
+     * @return
+     */
+    private double calcCWeightCoefficient(double Hz){ //TODO Figure out what magnitude the freq needs to be in, Hz/KHz/MHz
+        double R_c = (Math.pow(12194,2)*Math.pow(Hz,2))/
+                ((Math.pow(Hz,2)+Math.pow(20.6,6))*Math.pow(Hz,2)+Math.pow(12914,2));
+//        double C_f = 20*Math.log10(R_c)+0.06; // TODO Figure out if we need to return C_f or R_c
+        return R_c;
+    }
+
+    /**
+     * Convert an amplitude at a frequency to energy and add it to an accumulator.
+     * http://www.neurophys.wisc.edu/comp/docs/notes/not006.html
+     * @param weightedAmplitude
+     * @param sum
+     * @return
+     */
+    private double convertToSummedEnergy(double weightedAmplitude, double sum){
+        double G_max = 32767; // Max number represented by mic
+        double R = G_max/weightedAmplitude;
+        double Dw = 20*Math.log10(R);
+        double Dc = /*Cf -*/ Dw; // Cf is the Amplitude Calibration in dB at freq f.
+        sum = sum + Math.pow(10,Dc/10); //Dc/10 allows us to sum the energy, not the amplitude.
+        return sum;
+    }
+
+    /**
+     * Conver the energy of a sound to dB.
+     * http://www.neurophys.wisc.edu/comp/docs/notes/not006.html
+     * @param sumOfEnergy
+     * @return
+     */
+    private double convertEnergyToEffectiveSPL(double sumOfEnergy) {
+        return 20*Math.log10(Math.sqrt(sumOfEnergy));
+    }
+
+    /**
      * Converts Mic Voltage represented by a short to the pressure experienced by the mic.
      *
      * Max short value is 32,767, most smartphone microphones are accurate until about
@@ -177,7 +292,7 @@ public class SoundPressureLevel extends AndroidNonvisibleComponent
     private double[] convertMicVoltageToPressure(Complex[] soundData) {
         double[] soundPressures = new double[soundData.length];
         for (int i = 0; i < soundData.length; i++) {
-            soundPressures[i] = soundData[i].re()/51805.5336;
+            soundPressures[i] = magnitudeOfImaginaryNumber(soundData[i])/51805.5336;
         }
         return soundPressures;
     }
@@ -356,6 +471,17 @@ public class SoundPressureLevel extends AndroidNonvisibleComponent
     public void SoundPressureLevelChanged(double decibels) {
         this.currentSoundPressureLevel = decibels;
         EventDispatcher.dispatchEvent(this, "SoundPressureLevelChanged", this.currentSoundPressureLevel);
+    }
+
+    /**
+     * Indicates the sound pressure level has changed
+     */
+    @SimpleEvent(
+            description = "Event that is called on a set time period to update the sound pressure level."
+    )
+    public void WeightedSoundPressureLevelChanged(double decibels) {
+        this.currentWeightedSoundPressureLevel = decibels;
+        EventDispatcher.dispatchEvent(this, "WeightedSoundPressureLevelChanged", this.currentWeightedSoundPressureLevel);
     }
 
     /**
