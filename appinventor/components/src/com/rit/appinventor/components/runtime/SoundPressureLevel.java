@@ -164,20 +164,24 @@ public class SoundPressureLevel extends AndroidNonvisibleComponent
                 try {
                     FFTOutput = FFT.fft(toFFT);
 
+                    Log.d(LOG_TAG,String.format("spl weigh FFT bins."));
                     for (int j = 0; j < toFFT.length; j++) {
                         freqOfBin = ((double)j/(double)lengthOfFFT)*(double)sampleRateInHz;
                         weightedBins[j] = 2*magnitudeOfImaginaryNumber(toFFT[j])*
                                 calcCWeightCoefficient(freqOfBin); //TODO Currently hardcoded as C-Weighted as that's closest to no weighting. Need to find a dynamic way to switch between the two.
                     }
 
+                    Log.d(LOG_TAG,String.format("spl sum energies of weighted FFT bins."));
                     double sumOfEnergy = 0.0;
                     for (int j = 0; j < weightedBins.length; j++) {
-                        convertToSummedEnergy(weightedBins[j],sumOfEnergy);
+                        sumOfEnergy += convertToSummedEnergy(weightedBins[j]);
                     }
 
+                    Log.d(LOG_TAG,String.format("spl convert energy to dB: %f", sumOfEnergy));
                     //SPL of this segment of sound recorded.
                     double effectiveSPL = convertEnergyToEffectiveSPL(sumOfEnergy);
 
+                    Log.d(LOG_TAG,String.format("spl store effect dB: %f.",effectiveSPL));
                     //Store to average later.
                     effectiveSPLs[numEffectiveSPLs]=effectiveSPL;
 
@@ -192,6 +196,7 @@ public class SoundPressureLevel extends AndroidNonvisibleComponent
 
             if(!failedFFT) {
                 double weightedDb = calcRootMeanSquare(effectiveSPLs, effectiveSPLs.length);
+                Log.d(LOG_TAG,String.format("spl update display with weighted dB: ", weightedDb));
                 WeightedSoundPressureLevelChanged(weightedDb);
             }
 
@@ -260,13 +265,15 @@ public class SoundPressureLevel extends AndroidNonvisibleComponent
      * @param sum
      * @return
      */
-    private double convertToSummedEnergy(double weightedAmplitude, double sum){
+    private double convertToSummedEnergy(double weightedAmplitude){
+        double Cf = 0.0;
+        double energy;
         double G_max = 32767; // Max number represented by mic
         double R = G_max/weightedAmplitude;
         double Dw = 20*Math.log10(R);
-        double Dc = /*Cf -*/ Dw; // Cf is the Amplitude Calibration in dB at freq f.
-        sum = sum + Math.pow(10,Dc/10); //Dc/10 allows us to sum the energy, not the amplitude.
-        return sum;
+        double Dc = Cf - Dw; // Cf is the Amplitude Calibration in dB at freq f.
+        energy = Math.pow(10,Dc/10); //Dc/10 allows us to sum the energy, not the amplitude.
+        return energy;
     }
 
     /**
