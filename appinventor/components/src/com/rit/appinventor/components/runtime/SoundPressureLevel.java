@@ -169,12 +169,22 @@ public class SoundPressureLevel extends AndroidNonvisibleComponent
                         freqOfBin = ((double)j/(double)lengthOfFFT)*(double)sampleRateInHz;
                         weightedBins[j] = 2*magnitudeOfImaginaryNumber(toFFT[j])*
                                 calcCWeightCoefficient(freqOfBin); //TODO Currently hardcoded as C-Weighted as that's closest to no weighting. Need to find a dynamic way to switch between the two.
+                        if(weightedBins[j]<0){
+                            Log.d(LOG_TAG,String.format("spl NEGATIVE MAGNITUDE? %f",magnitudeOfImaginaryNumber(toFFT[j])));
+                            Log.d(LOG_TAG,String.format("spl NEGATIVE COEFFICIENT AT FREQ %f? %f",freqOfBin,calcCWeightCoefficient(freqOfBin)));
+			            }
                     }
 
                     Log.d(LOG_TAG,String.format("spl sum energies of weighted FFT bins."));
                     double sumOfEnergy = 0.0;
+                    double energy;
                     for (int j = 0; j < weightedBins.length; j++) {
-                        sumOfEnergy += convertToSummedEnergy(weightedBins[j]);
+                        Log.d(LOG_TAG,String.format("spl weightedBin value: %f",weightedBins[j]));
+                        energy = convertToSummedEnergy(weightedBins[j]);
+                        if (energy != Double.POSITIVE_INFINITY && energy != Double.NEGATIVE_INFINITY && energy != Double.NaN) {
+                            sumOfEnergy += energy;
+                        }
+                        Log.d(LOG_TAG,String.format("spl running total of energy: %f",sumOfEnergy));
                     }
 
                     Log.d(LOG_TAG,String.format("spl convert energy to dB: %f", sumOfEnergy));
@@ -253,9 +263,18 @@ public class SoundPressureLevel extends AndroidNonvisibleComponent
      */
     private double calcCWeightCoefficient(double Hz){ //TODO Figure out what magnitude the freq needs to be in, Hz/KHz/MHz
         double R_c = (Math.pow(12194,2)*Math.pow(Hz,2))/
-                ((Math.pow(Hz,2)+Math.pow(20.6,6))*Math.pow(Hz,2)+Math.pow(12914,2));
-//        double C_f = 20*Math.log10(R_c)+0.06; // TODO Figure out if we need to return C_f or R_c
-        return R_c;
+                ((Math.pow(Hz,2)+Math.pow(20.6,6))
+                        *(Math.pow(Hz,2)+Math.pow(12914,2)));
+        double numerator = (Math.pow(12194,2)*Math.pow(Hz,2));
+        double denominator = ((Math.pow(Hz,2)+Math.pow(20.6,6))
+                *(Math.pow(Hz,2)+Math.pow(12914,2)));
+        Log.d(LOG_TAG,String.format("spl Numerator: %f",numerator));
+        Log.d(LOG_TAG,String.format("spl Denominator: %f",denominator));
+        Log.d(LOG_TAG,String.format("spl divide %f",numerator/denominator));
+        Log.d(LOG_TAG,String.format("spl Calculating C Weight Coefficient. R_c: %f",R_c));
+        double C_f = 20*Math.log10(R_c)+0.06; // TODO Figure out if we need to return C_f or R_c
+        Log.d(LOG_TAG,String.format("spl Calculating C Weight Coefficient. C_f: %f",C_f));
+        return C_f;
     }
 
     /**
@@ -270,9 +289,13 @@ public class SoundPressureLevel extends AndroidNonvisibleComponent
         double energy;
         double G_max = 32767; // Max number represented by mic
         double R = G_max/weightedAmplitude;
+        Log.d(LOG_TAG,String.format("spl converting to energy, R: %f",R));
         double Dw = 20*Math.log10(R);
+        Log.d(LOG_TAG,String.format("spl converting to energy, Dw: %f",Dw));
         double Dc = Cf - Dw; // Cf is the Amplitude Calibration in dB at freq f.
+        Log.d(LOG_TAG,String.format("spl converting to energy, Dc: %f",Dc));
         energy = Math.pow(10,Dc/10); //Dc/10 allows us to sum the energy, not the amplitude.
+        Log.d(LOG_TAG,String.format("spl converting to energy, energy: %f",energy));
         return energy;
     }
 
