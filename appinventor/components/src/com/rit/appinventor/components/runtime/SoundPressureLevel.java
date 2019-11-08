@@ -1,6 +1,5 @@
 package com.rit.appinventor.components.runtime;
 
-import android.content.Context;
 import android.os.Handler;
 import android.util.Log;
 import android.util.Pair;
@@ -9,15 +8,8 @@ import com.google.appinventor.components.common.ComponentCategory;
 import com.google.appinventor.components.common.PropertyTypeConstants;
 import com.google.appinventor.components.common.YaVersion;
 import com.google.appinventor.components.runtime.*;
-import com.google.appinventor.components.runtime.util.AsynchUtil;
 import android.Manifest;
-import android.media.MediaRecorder;
-import android.media.MediaRecorder.OnErrorListener;
-import android.media.MediaRecorder.OnInfoListener;
-import android.app.Activity;
-import android.media.AudioFormat;
 import android.media.AudioRecord;
-import android.os.Environment;
 import android.content.pm.PackageManager;
 
 import static android.media.AudioFormat.CHANNEL_IN_MONO;
@@ -53,6 +45,10 @@ public class SoundPressureLevel extends AndroidNonvisibleComponent
     private int listenIntervalMilliSeconds = 200;
     private boolean hasPermission = false;
     private Object recordingLock = new Object();
+    // Below constants dependent upon FFT being 1024 samples.
+    private double fastWeightingCoefficient = 0.83047;
+    private double slowWeightingCoefficient = 0.9770475;
+    private double newAndOldWeightingCoefficientDiff = 0.999;
 
     public SoundPressureLevel(ComponentContainer container) {
         super(container.$form());
@@ -151,8 +147,9 @@ public class SoundPressureLevel extends AndroidNonvisibleComponent
             Complex[] FFTOutput = null;
             double[] weightedBins = new double[lengthOfFFT];
             double freqOfBin = 0.0;
-            double[] effectiveSPLs = new double[soundData.length/lengthOfFFT];
             boolean failedFFT = false;
+            double currentWeightedValue = 0.0;
+            double oldWeightedValue = 0.0;
 
             int i = 0;
             int numEffectiveSPLs = 0;
@@ -165,35 +162,19 @@ public class SoundPressureLevel extends AndroidNonvisibleComponent
                     FFTOutput = FFT.fft(toFFT);
 
                     Log.d(LOG_TAG,String.format("spl weigh FFT bins."));
-                    for (int j = 0; j < toFFT.length; j++) {
+                    for (int j = 0; j < FFTOutput.length; j++) {
                         freqOfBin = ((double)j/(double)lengthOfFFT)*(double)sampleRateInHz;
-                        weightedBins[j] = 2*magnitudeOfImaginaryNumber(toFFT[j])*
+                        weightedBins[j] = 2*magnitudeOfImaginaryNumber(FFTOutput[j])*
                                 calcCWeightCoefficient(freqOfBin); //TODO Currently hardcoded as C-Weighted as that's closest to no weighting. Need to find a dynamic way to switch between the two.
-                        if(weightedBins[j]<0){
-                            Log.d(LOG_TAG,String.format("spl NEGATIVE MAGNITUDE? %f",magnitudeOfImaginaryNumber(toFFT[j])));
-                            Log.d(LOG_TAG,String.format("spl NEGATIVE COEFFICIENT AT FREQ %f? %f",freqOfBin,calcCWeightCoefficient(freqOfBin)));
-			            }
+                        currentWeightedValue += weightedBins[j];
                     }
+//                    currentWeightedValue = calcRootMeanSquare(weightedBins,weightedBins.length);
 
-                    Log.d(LOG_TAG,String.format("spl sum energies of weighted FFT bins."));
-                    double sumOfEnergy = 0.0;
-                    double energy;
-                    for (int j = 0; j < weightedBins.length; j++) {
-                        Log.d(LOG_TAG,String.format("spl weightedBin value: %f",weightedBins[j]));
-                        energy = convertToSummedEnergy(weightedBins[j]);
-                        if (energy != Double.POSITIVE_INFINITY && energy != Double.NEGATIVE_INFINITY && energy != Double.NaN) {
-                            sumOfEnergy += energy;
-                        }
-                        Log.d(LOG_TAG,String.format("spl running total of energy: %f",sumOfEnergy));
-                    }
-
-                    Log.d(LOG_TAG,String.format("spl convert energy to dB: %f", sumOfEnergy));
-                    //SPL of this segment of sound recorded.
-                    double effectiveSPL = convertEnergyToEffectiveSPL(sumOfEnergy);
-
-                    Log.d(LOG_TAG,String.format("spl store effect dB: %f.",effectiveSPL));
-                    //Store to average later.
-                    effectiveSPLs[numEffectiveSPLs]=effectiveSPL;
+                    oldWeightedValue += Math.sqrt(
+                            (1/.125) *
+                            (fastWeightingCoefficient * Math.pow(oldWeightedValue,2) +
+                            (newAndOldWeightingCoefficientDiff - fastWeightingCoefficient) *
+                                    Math.pow(currentWeightedValue,2)));
 
                     //Increment counters.
                     numEffectiveSPLs++;
@@ -205,12 +186,12 @@ public class SoundPressureLevel extends AndroidNonvisibleComponent
             }
 
             if(!failedFFT) {
-                double weightedDb = calcRootMeanSquare(effectiveSPLs, effectiveSPLs.length);
-                Log.d(LOG_TAG,String.format("spl update display with weighted dB: ", weightedDb));
+                double weightedDb = calcDeciBels(oldWeightedValue/51805.5336); // Same division used when converting mic units to pascals.
+                Log.d(LOG_TAG,String.format("spl update display with weighted dB: %f", weightedDb));
                 WeightedSoundPressureLevelChanged(weightedDb);
             }
 
-            //TODO The below is old code for comparison to the weighted SPL. Delete once the aboved is confirmed to work.
+            // TODO The below is old code for comparison to the weighted SPL. Delete once the above is confirmed to work.
 
             //Convert data from mic to pressure in pascals.
             double[] soundSamplePressure = convertMicVoltageToPressure(soundData);
@@ -224,7 +205,7 @@ public class SoundPressureLevel extends AndroidNonvisibleComponent
             Log.d(LOG_TAG,String.format("spl %f dBs",dBs));
 
             //Round to the tenths decimal place.
-            dBs = Math.round(dBs*10)/10;
+//            dBs = Math.round(dBs*10)/10;
 
             SoundPressureLevelChanged(dBs);
         }
@@ -248,10 +229,10 @@ public class SoundPressureLevel extends AndroidNonvisibleComponent
      */
     private double calcAWeightCoefficient(double Hz){ //TODO Figure out what magnitude the freq needs to be in, Hz/KHz/MHz
         double R_a = (Math.pow(12194,2)*Math.pow(Hz,4))/
-                ((Math.pow(Hz,2)+Math.pow(20.6,6))*
-                        Math.sqrt((Math.pow(Hz,2)+Math.pow(107.7,2))*(Math.pow(Hz,2)+Math.pow(737.9,2)))*
-                        Math.pow(Hz,2)+Math.pow(12914,2));
-//        double A_f = 20*Math.log10(R_a)+2.0; // TODO Figure out if we need to return A_f or R_a
+                ((Math.pow(Hz,2)+Math.pow(20.6,2))*
+                        Math.sqrt((Math.pow(Hz,2)+Math.pow(107.7,2))*
+                                (Math.pow(Hz,2)+Math.pow(737.9,2)))*
+                        (Math.pow(Hz,2)+Math.pow(12914,2)));
         return R_a;
     }
 
@@ -263,50 +244,16 @@ public class SoundPressureLevel extends AndroidNonvisibleComponent
      */
     private double calcCWeightCoefficient(double Hz){ //TODO Figure out what magnitude the freq needs to be in, Hz/KHz/MHz
         double R_c = (Math.pow(12194,2)*Math.pow(Hz,2))/
-                ((Math.pow(Hz,2)+Math.pow(20.6,6))
-                        *(Math.pow(Hz,2)+Math.pow(12914,2)));
-        double numerator = (Math.pow(12194,2)*Math.pow(Hz,2));
-        double denominator = ((Math.pow(Hz,2)+Math.pow(20.6,6))
-                *(Math.pow(Hz,2)+Math.pow(12914,2)));
-        Log.d(LOG_TAG,String.format("spl Numerator: %f",numerator));
-        Log.d(LOG_TAG,String.format("spl Denominator: %f",denominator));
-        Log.d(LOG_TAG,String.format("spl divide %f",numerator/denominator));
+                ((Math.pow(Hz,2)+Math.pow(20.6,2)) *
+                        (Math.pow(Hz,2)+Math.pow(12914,2)));
+//        double numerator = (Math.pow(12194,2)*Math.pow(Hz,2));
+//        double denominator = ((Math.pow(Hz,2)+Math.pow(20.6,2)) // 20.6^2 not 20.6^6
+//                *(Math.pow(Hz,2)+Math.pow(12914,2)));
+//        Log.d(LOG_TAG,String.format("spl Numerator: %f",numerator));
+//        Log.d(LOG_TAG,String.format("spl Denominator: %f",denominator));
+//        Log.d(LOG_TAG,String.format("spl divide %f",numerator/denominator));
         Log.d(LOG_TAG,String.format("spl Calculating C Weight Coefficient. R_c: %f",R_c));
-        double C_f = 20*Math.log10(R_c)+0.06; // TODO Figure out if we need to return C_f or R_c
-        Log.d(LOG_TAG,String.format("spl Calculating C Weight Coefficient. C_f: %f",C_f));
-        return C_f;
-    }
-
-    /**
-     * Convert an amplitude at a frequency to energy and add it to an accumulator.
-     * http://www.neurophys.wisc.edu/comp/docs/notes/not006.html
-     * @param weightedAmplitude
-     * @param sum
-     * @return
-     */
-    private double convertToSummedEnergy(double weightedAmplitude){
-        double Cf = 0.0;
-        double energy;
-        double G_max = 32767; // Max number represented by mic
-        double R = G_max/weightedAmplitude;
-        Log.d(LOG_TAG,String.format("spl converting to energy, R: %f",R));
-        double Dw = 20*Math.log10(R);
-        Log.d(LOG_TAG,String.format("spl converting to energy, Dw: %f",Dw));
-        double Dc = Cf - Dw; // Cf is the Amplitude Calibration in dB at freq f.
-        Log.d(LOG_TAG,String.format("spl converting to energy, Dc: %f",Dc));
-        energy = Math.pow(10,Dc/10); //Dc/10 allows us to sum the energy, not the amplitude.
-        Log.d(LOG_TAG,String.format("spl converting to energy, energy: %f",energy));
-        return energy;
-    }
-
-    /**
-     * Conver the energy of a sound to dB.
-     * http://www.neurophys.wisc.edu/comp/docs/notes/not006.html
-     * @param sumOfEnergy
-     * @return
-     */
-    private double convertEnergyToEffectiveSPL(double sumOfEnergy) {
-        return 20*Math.log10(Math.sqrt(sumOfEnergy));
+        return R_c;
     }
 
     /**
