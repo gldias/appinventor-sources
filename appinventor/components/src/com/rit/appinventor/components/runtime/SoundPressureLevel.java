@@ -170,7 +170,7 @@ public class SoundPressureLevel extends AndroidNonvisibleComponent
                     }
 //                    currentWeightedValue = calcRootMeanSquare(weightedBins,weightedBins.length);
 
-                    oldWeightedValue += Math.sqrt(
+                    oldWeightedValue = Math.sqrt(
                             (1/.125) *
                             (fastWeightingCoefficient * Math.pow(oldWeightedValue,2) +
                             (newAndOldWeightingCoefficientDiff - fastWeightingCoefficient) *
