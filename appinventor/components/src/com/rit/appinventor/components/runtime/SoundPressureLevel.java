@@ -155,7 +155,7 @@ public class SoundPressureLevel extends AndroidNonvisibleComponent
             int numEffectiveSPLs = 0;
             while (i+lengthOfFFT<=soundData.length){ //Only use soundData if there's enough left.
                 for (int j = 0; j < lengthOfFFT; j++) {
-                    Log.d(LOG_TAG,String.format("spl sound data %f",soundData[i].re()));
+                    Log.d(LOG_TAG,String.format("spl sound data %f",soundData[i+j].re()));
                     toFFT[j] = soundData[i+j];
                 }
                 try {
@@ -232,7 +232,7 @@ public class SoundPressureLevel extends AndroidNonvisibleComponent
                 ((Math.pow(Hz,2)+Math.pow(20.6,2))*
                         Math.sqrt((Math.pow(Hz,2)+Math.pow(107.7,2))*
                                 (Math.pow(Hz,2)+Math.pow(737.9,2)))*
-                        (Math.pow(Hz,2)+Math.pow(12914,2)));
+                        (Math.pow(Hz,2)+Math.pow(12194,2)));
         return R_a;
     }
 
@@ -245,7 +245,7 @@ public class SoundPressureLevel extends AndroidNonvisibleComponent
     private double calcCWeightCoefficient(double Hz){ //TODO Figure out what magnitude the freq needs to be in, Hz/KHz/MHz
         double R_c = (Math.pow(12194,2)*Math.pow(Hz,2))/
                 ((Math.pow(Hz,2)+Math.pow(20.6,2)) *
-                        (Math.pow(Hz,2)+Math.pow(12914,2)));
+                        (Math.pow(Hz,2)+Math.pow(12194,2)));
 //        double numerator = (Math.pow(12194,2)*Math.pow(Hz,2));
 //        double denominator = ((Math.pow(Hz,2)+Math.pow(20.6,2)) // 20.6^2 not 20.6^6
 //                *(Math.pow(Hz,2)+Math.pow(12914,2)));
