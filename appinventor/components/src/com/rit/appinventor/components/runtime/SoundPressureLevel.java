@@ -45,10 +45,17 @@ public class SoundPressureLevel extends AndroidNonvisibleComponent
     private int listenIntervalMilliSeconds = 200;
     private boolean hasPermission = false;
     private Object recordingLock = new Object();
+    private double fastWeightingTimeInterval = 0.125;
+    private double slowWeightingTimeOnterval = 1;
     // Below constants dependent upon FFT being 1024 samples.
     private double fastWeightingCoefficient = 0.83047;
     private double slowWeightingCoefficient = 0.9770475;
     private double newAndOldWeightingCoefficientDiff = 0.999;
+
+    double currentAWeightedValue = 0.0;
+    double currentCWeightedValue = 0.0;
+    double oldAWeightedValue = 0.0;
+    double oldCWeightedValue = 0.0;
 
     public SoundPressureLevel(ComponentContainer container) {
         super(container.$form());
@@ -129,7 +136,7 @@ public class SoundPressureLevel extends AndroidNonvisibleComponent
         if (isEnabled) {
             stopListening();
             if (!threadSuspended) {
-                Log.d(LOG_TAG, "spl suspend thrad");
+                Log.d(LOG_TAG, "spl suspend thread");
                 threadSuspended = true;
                 soundChecker.suspend();
             }
@@ -139,65 +146,117 @@ public class SoundPressureLevel extends AndroidNonvisibleComponent
     public void onSoundPressureLevelChanged(Pair<Complex[], Integer> tuple) {
         if (isEnabled) {
             Log.d(LOG_TAG, "spl onSoundPressueLevelChange");
-            Complex[] soundData = tuple.first;
+
+            /*
+             * Hard Coded data to allow for better testing.
+             */
+//            Integer length = 1024;
+//            Complex[] soundData = new Complex[length];
+//            String csvSoundData = "";
+//            for (int i = 0; i < length; i++) {
+//                soundData[i] = new Complex(1000*Math.sin(2*Math.PI*(Double.valueOf(i)/Double.valueOf(441))),0); //Generate a 1000Hz signal.
+//                csvSoundData+=String.valueOf(soundData[i]);
+//                csvSoundData+=",";
+//            }
+            Complex[] fullSoundData = tuple.first;
             Integer length = tuple.second;
-            double data = 0;
-            int lengthOfFFT = 1024; // Needs to be of the form 2^n
+
+            int lengthOfFFT = calcFFTLength(length);
             Complex[] toFFT = new Complex[lengthOfFFT];
             Complex[] FFTOutput = null;
-            double[] weightedBins = new double[lengthOfFFT];
+            double cWeightedBin;
+            double aWeightedBin;
             double freqOfBin = 0.0;
             boolean failedFFT = false;
-            double currentWeightedValue = 0.0;
-            double oldWeightedValue = 0.0;
-
             int i = 0;
             int numEffectiveSPLs = 0;
-            while (i+lengthOfFFT<=soundData.length){ //Only use soundData if there's enough left.
-                for (int j = 0; j < lengthOfFFT; j++) {
-                    Log.d(LOG_TAG,String.format("spl sound data %f",soundData[i+j].re()));
-                    toFFT[j] = soundData[i+j];
-                }
-                try {
-                    FFTOutput = FFT.fft(toFFT);
+//            String csvCWeighted = "";
+//            String csvAWeighted = "";
+            Complex[] aWeightedToIFFT = new Complex[lengthOfFFT];
+            Complex[] cWeightedToIFFT = new Complex[lengthOfFFT];
+            Complex[] aWeightedIFFTOutput = null;
+            Complex[] cWeightedIFFTOutput = null;
 
-                    Log.d(LOG_TAG,String.format("spl weigh FFT bins."));
-                    for (int j = 0; j < FFTOutput.length; j++) {
-                        freqOfBin = ((double)j/(double)lengthOfFFT)*(double)sampleRateInHz;
-                        weightedBins[j] = 2*magnitudeOfImaginaryNumber(FFTOutput[j])*
-                                calcCWeightCoefficient(freqOfBin); //TODO Currently hardcoded as C-Weighted as that's closest to no weighting. Need to find a dynamic way to switch between the two.
-                        currentWeightedValue += weightedBins[j];
-                    }
-//                    currentWeightedValue = calcRootMeanSquare(weightedBins,weightedBins.length);
-
-                    oldWeightedValue = Math.sqrt(
-                            (1/.125) *
-                            (fastWeightingCoefficient * Math.pow(oldWeightedValue,2) +
-                            (newAndOldWeightingCoefficientDiff - fastWeightingCoefficient) *
-                                    Math.pow(currentWeightedValue,2)));
-
-                    //Increment counters.
-                    numEffectiveSPLs++;
-                    i+=lengthOfFFT; //Move to the front of the next clip of sound to FFT.
-                } catch (IllegalArgumentException e){
-                    Log.d(LOG_TAG,e.getMessage());
-                    failedFFT = true;
-                }
+            Complex[] soundData = new Complex[lengthOfFFT];
+            for (int j = 0; j < lengthOfFFT; j++) {
+                soundData[j] = fullSoundData[j];
             }
 
-            if(!failedFFT) {
-                double weightedDb = calcDeciBels(oldWeightedValue/51805.5336); // Same division used when converting mic units to pascals.
-                Log.d(LOG_TAG,String.format("spl update display with weighted dB: %f", weightedDb));
-                WeightedSoundPressureLevelChanged(weightedDb);
+            Log.d(LOG_TAG,String.format("spl amount of sound data: %d",soundData.length));
+            try {
+                // Perform FFT, to have sound data with respect to frequency instead of time.
+                FFTOutput = FFT.fft(soundData);
+                Log.d(LOG_TAG, String.format("Number of FFT bins: %d", FFTOutput.length));
+                // Manipulate the frequency bins according to A and C weight Coefficients.
+                for (int j = 0; j < FFTOutput.length; j++) {
+                    freqOfBin = ((double)j/(double)lengthOfFFT)*(double)sampleRateInHz;
+                    aWeightedBin = magnitudeOfImaginaryNumber(FFTOutput[j])*
+                            calcAWeightCoefficient(freqOfBin);
+//                    csvAWeighted+=String.valueOf(cWeightedBin);
+//                    csvAWeighted+=",";
+                    cWeightedBin = magnitudeOfImaginaryNumber(FFTOutput[j])*
+                            calcCWeightCoefficient(freqOfBin);
+//                    csvCWeighted+=String.valueOf(cWeightedBin);
+//                    csvCWeighted+=",";
+                    aWeightedToIFFT[j] = new Complex(aWeightedBin,0);
+                    cWeightedToIFFT[j] = new Complex(cWeightedBin,0);
+                }
+
+                // Perform inverse FFT, to have sound data with respect to time instead of frequency.
+                aWeightedIFFTOutput = FFT.ifft(aWeightedToIFFT);
+                cWeightedIFFTOutput = FFT.ifft(cWeightedToIFFT);
+
+                //Convert data from mic to pressure in pascals.
+                double[] aWeightedSoundPressure = convertMicVoltageToPressure(aWeightedIFFTOutput);
+                double[] cWeightedSoundPressure = convertMicVoltageToPressure(cWeightedIFFTOutput);
+
+                //Find Root Mean Square of sound over time.
+                currentAWeightedValue = calcRootMeanSquare(aWeightedSoundPressure,aWeightedSoundPressure.length);
+                currentCWeightedValue = calcRootMeanSquare(cWeightedSoundPressure,cWeightedSoundPressure.length);
+
+                /*
+                 * TODO The below commented code doesn't quite work, needs to be revisted before weighing SPL over time.
+                 * It is designed to be a rough format for fast/slow weighting. Currently the value keeps climbing instead of changing smoothly.
+                 * The idea was to combine ~90% of the past Sound Pressure Level squared and ~10% of the squared newly calculated
+                 * sound pressure level.
+                 */
+//                currentAWeightedValue = Math.sqrt(
+//                        (1/fastWeightingTimeInterval) * ((fastWeightingCoefficient * Math.pow(oldAWeightedValue,2)) +
+//                                ((newAndOldWeightingCoefficientDiff - fastWeightingCoefficient) *
+//                                        Math.pow(currentAWeightedValue,2))));
+//                currentAWeightedValue = Math.sqrt(
+//                        (1/slowWeightingTimeOnterval) * (slowWeightingCoefficient * Math.pow(oldAWeightedValue,2) +
+//                                (newAndOldWeightingCoefficientDiff - slowWeightingCoefficient) *
+//                                        Math.pow(currentAWeightedValue,2)));
+
+                oldAWeightedValue = currentAWeightedValue;
+                oldCWeightedValue = currentCWeightedValue;
+
+                // Convert averaged weighted pascals to Decibels.
+                double aWeightedDb = calcDeciBels(oldAWeightedValue);
+                double cWeightedDb = calcDeciBels(oldCWeightedValue);
+
+                Log.d(LOG_TAG,String.format("spl update display with A-Weighted dB: %f", aWeightedDb));
+                Log.d(LOG_TAG,String.format("spl update display with C-Weighted dB: %f", cWeightedDb));
+
+                // Trigger events to send new values to UI.
+                aWeightedSoundPressureLevelChanged(aWeightedDb);
+                cWeightedSoundPressureLevelChanged(cWeightedDb);
+//                Log.d(LOG_TAG,"SoundData: "+csvSoundData);
+//                Log.d(LOG_TAG,"C Weighted Bins: "+csvCWeighted);
+//                Log.d(LOG_TAG,"A Weighted Bins: "+csvAWeighted);
+
+            } catch (IllegalArgumentException e) {
+                Log.d(LOG_TAG,e.getMessage());
             }
 
             // TODO The below is old code for comparison to the weighted SPL. Delete once the above is confirmed to work.
-
+            Log.d(LOG_TAG,"About to run unweighted dB.");
             //Convert data from mic to pressure in pascals.
             double[] soundSamplePressure = convertMicVoltageToPressure(soundData);
-
+            Log.d(LOG_TAG,"Finished converting unweighted voltage to pressure");
             //Find root mean square of sound.
-            double rms = calcRootMeanSquare(soundSamplePressure,length);
+            double rms = calcRootMeanSquare(soundSamplePressure,soundSamplePressure.length);
             Log.d(LOG_TAG,String.format("spl RMS %f",rms));
 
             //Find SPL of sound.
@@ -227,12 +286,13 @@ public class SoundPressureLevel extends AndroidNonvisibleComponent
      * @param Hz
      * @return
      */
-    private double calcAWeightCoefficient(double Hz){ //TODO Figure out what magnitude the freq needs to be in, Hz/KHz/MHz
+    private double calcAWeightCoefficient(double Hz){
         double R_a = (Math.pow(12194,2)*Math.pow(Hz,4))/
                 ((Math.pow(Hz,2)+Math.pow(20.6,2))*
                         Math.sqrt((Math.pow(Hz,2)+Math.pow(107.7,2))*
                                 (Math.pow(Hz,2)+Math.pow(737.9,2)))*
                         (Math.pow(Hz,2)+Math.pow(12194,2)));
+        Log.d(LOG_TAG,String.format("spl Calculating A Weight Coefficient. R_a: %f",R_a));
         return R_a;
     }
 
@@ -242,7 +302,7 @@ public class SoundPressureLevel extends AndroidNonvisibleComponent
      * @param Hz
      * @return
      */
-    private double calcCWeightCoefficient(double Hz){ //TODO Figure out what magnitude the freq needs to be in, Hz/KHz/MHz
+    private double calcCWeightCoefficient(double Hz){
         double R_c = (Math.pow(12194,2)*Math.pow(Hz,2))/
                 ((Math.pow(Hz,2)+Math.pow(20.6,2)) *
                         (Math.pow(Hz,2)+Math.pow(12194,2)));
@@ -260,7 +320,7 @@ public class SoundPressureLevel extends AndroidNonvisibleComponent
      * Converts Mic Voltage represented by a short to the pressure experienced by the mic.
      *
      * Max short value is 32,767, most smartphone microphones are accurate until about
-     * 90dB or 0.6325 pascals. 32,767/0.6325 = 51,805.5336, which will be the value used
+     * 100dB or 2 pascals. 32,767/2 = 16383.5, which will be the value used
      * to convert between microphone data and pascals.
      *
      * @param soundData
@@ -269,7 +329,7 @@ public class SoundPressureLevel extends AndroidNonvisibleComponent
     private double[] convertMicVoltageToPressure(Complex[] soundData) {
         double[] soundPressures = new double[soundData.length];
         for (int i = 0; i < soundData.length; i++) {
-            soundPressures[i] = magnitudeOfImaginaryNumber(soundData[i])/51805.5336;
+            soundPressures[i] = magnitudeOfImaginaryNumber(soundData[i])/16383.5;
         }
         return soundPressures;
     }
@@ -306,6 +366,25 @@ public class SoundPressureLevel extends AndroidNonvisibleComponent
         return dBs;
     }
 
+    /**
+     * Calculates the highest number that is a power of 2 that is less than `len`.
+     *
+     * This is intended to find the amount of sound to perform an FFT on, as FFT
+     * requires a power of 2 amount of information.
+     * @param len
+     * @return
+     */
+    private int calcFFTLength(int len){
+        double log2 = Math.log(len)/Math.log(2);
+        double floor = Math.floor(log2);
+        double newLen = Math.pow(2,floor);
+        return (int) newLen;
+    }
+
+    /**
+     * Read data from the microphone.
+     * @return
+     */
     public Pair<Complex[], Integer> analyzeSoundData() {
         Log.d(LOG_TAG, "spl analyzeSoundData");
         short spldata = 0;
@@ -451,14 +530,23 @@ public class SoundPressureLevel extends AndroidNonvisibleComponent
     }
 
     /**
-     * Indicates the sound pressure level has changed
+     * Indicates the sound pressure level has changed, reports A-Weighted Decibels.
      */
     @SimpleEvent(
             description = "Event that is called on a set time period to update the sound pressure level."
     )
-    public void WeightedSoundPressureLevelChanged(double decibels) {
-        this.currentWeightedSoundPressureLevel = decibels;
-        EventDispatcher.dispatchEvent(this, "WeightedSoundPressureLevelChanged", this.currentWeightedSoundPressureLevel);
+    public void aWeightedSoundPressureLevelChanged(double aWeightedDecibels) {
+        EventDispatcher.dispatchEvent(this, "aWeightedSoundPressureLevelChanged", aWeightedDecibels);
+    }
+
+    /**
+     * Indicates the sound pressure level has changed, reports C-Weighted Decibels.
+     */
+    @SimpleEvent(
+            description = "Event that is called on a set time period to update the sound pressure level."
+    )
+    public void cWeightedSoundPressureLevelChanged(double cWeightedDecibels) {
+        EventDispatcher.dispatchEvent(this, "cWeightedSoundPressureLevelChanged", cWeightedDecibels);
     }
 
     /**
