@@ -170,6 +170,8 @@ public class SoundPressureLevel extends AndroidNonvisibleComponent
             boolean failedFFT = false;
             int i = 0;
             int numEffectiveSPLs = 0;
+            double aWeightedDb = 0.0;
+            double cWeightedDb = 0.0;
 //            String csvCWeighted = "";
 //            String csvAWeighted = "";
             Complex[] aWeightedToIFFT = new Complex[lengthOfFFT];
@@ -233,15 +235,12 @@ public class SoundPressureLevel extends AndroidNonvisibleComponent
                 oldCWeightedValue = currentCWeightedValue;
 
                 // Convert averaged weighted pascals to Decibels.
-                double aWeightedDb = calcDeciBels(oldAWeightedValue);
-                double cWeightedDb = calcDeciBels(oldCWeightedValue);
+                aWeightedDb = calcDeciBels(oldAWeightedValue);
+                cWeightedDb = calcDeciBels(oldCWeightedValue);
 
                 Log.d(LOG_TAG,String.format("spl update display with A-Weighted dB: %f", aWeightedDb));
                 Log.d(LOG_TAG,String.format("spl update display with C-Weighted dB: %f", cWeightedDb));
 
-                // Trigger events to send new values to UI.
-                aWeightedSoundPressureLevelChanged(aWeightedDb);
-                cWeightedSoundPressureLevelChanged(cWeightedDb);
 //                Log.d(LOG_TAG,"SoundData: "+csvSoundData);
 //                Log.d(LOG_TAG,"C Weighted Bins: "+csvCWeighted);
 //                Log.d(LOG_TAG,"A Weighted Bins: "+csvAWeighted);
@@ -266,7 +265,7 @@ public class SoundPressureLevel extends AndroidNonvisibleComponent
             //Round to the tenths decimal place.
 //            dBs = Math.round(dBs*10)/10;
 
-            SoundPressureLevelChanged(dBs);
+            SoundPressureLevelUpdated(dBs,aWeightedDb,cWeightedDb);
         }
     }
 
@@ -478,10 +477,16 @@ public class SoundPressureLevel extends AndroidNonvisibleComponent
         if (checkPermissions()) {
             Log.d(LOG_TAG, "spl Available call");
             AudioRecord testRecorder = new AudioRecord(MIC, sampleRateInHz, channelConfig, audioFormat, minBufferSize);
+            if(this.isEnabled){
+                stopListening();
+            }
             testRecorder.startRecording();
             isAvailable = testRecorder.getRecordingState() == AudioRecord.RECORDSTATE_RECORDING; //Would be RECORDSTATE_STOPPED if no mic is available
             testRecorder.stop();
             testRecorder.release();
+            if (this.isEnabled){
+                startListening();
+            }
             Log.d(LOG_TAG, "spl Availability: " + String.valueOf(isAvailable));
         }
         else{
@@ -524,29 +529,9 @@ public class SoundPressureLevel extends AndroidNonvisibleComponent
     @SimpleEvent(
             description = "Event that is called on a set time period to update the sound pressure level."
     )
-    public void SoundPressureLevelChanged(double decibels) {
+    public void SoundPressureLevelUpdated(double decibels, double aWeightedDecibels, double cWeightedDecibels) {
         this.currentSoundPressureLevel = decibels;
-        EventDispatcher.dispatchEvent(this, "SoundPressureLevelChanged", this.currentSoundPressureLevel);
-    }
-
-    /**
-     * Indicates the sound pressure level has changed, reports A-Weighted Decibels.
-     */
-    @SimpleEvent(
-            description = "Event that is called on a set time period to update the sound pressure level."
-    )
-    public void aWeightedSoundPressureLevelChanged(double aWeightedDecibels) {
-        EventDispatcher.dispatchEvent(this, "aWeightedSoundPressureLevelChanged", aWeightedDecibels);
-    }
-
-    /**
-     * Indicates the sound pressure level has changed, reports C-Weighted Decibels.
-     */
-    @SimpleEvent(
-            description = "Event that is called on a set time period to update the sound pressure level."
-    )
-    public void cWeightedSoundPressureLevelChanged(double cWeightedDecibels) {
-        EventDispatcher.dispatchEvent(this, "cWeightedSoundPressureLevelChanged", cWeightedDecibels);
+        EventDispatcher.dispatchEvent(this, "SoundPressureLevelUpdated", this.currentSoundPressureLevel, aWeightedDecibels, cWeightedDecibels);
     }
 
     /**
