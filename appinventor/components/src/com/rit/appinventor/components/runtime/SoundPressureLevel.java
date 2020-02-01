@@ -77,7 +77,7 @@ public class SoundPressureLevel extends AndroidNonvisibleComponent
                             form.runOnUiThread(new Runnable() {
                                 @Override
                                 public void run() {
-                                    onSoundPressureLevelChanged(tuple);
+                                    updateSoundPressureLevel(tuple);
                                 }
                             });
                         }
@@ -143,7 +143,7 @@ public class SoundPressureLevel extends AndroidNonvisibleComponent
         }
     }
 
-    public void onSoundPressureLevelChanged(Pair<Complex[], Integer> tuple) {
+    public void updateSoundPressureLevel(Pair<Complex[], Integer> tuple) {
         if (isEnabled) {
             Log.d(LOG_TAG, "spl onSoundPressueLevelChange");
 
