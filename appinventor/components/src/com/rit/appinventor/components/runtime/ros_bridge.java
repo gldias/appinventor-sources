@@ -3,6 +3,8 @@ package com.rit.appinventor.components.runtime;
 import android.os.Build;
 import android.support.annotation.RequiresApi;
 import com.google.appinventor.components.annotations.DesignerComponent;
+import com.google.appinventor.components.annotations.DesignerProperty;
+import com.google.appinventor.components.annotations.SimpleFunction;
 import com.google.appinventor.components.annotations.SimpleObject;
 import com.google.appinventor.components.common.ComponentCategory;
 import com.google.appinventor.components.runtime.AndroidNonvisibleComponent;
@@ -39,7 +41,46 @@ public class ros_bridge extends AndroidNonvisibleComponent implements OnStopList
         //TODO
     }
 
-    public void sendCommand() {
+    /**
+     * Allows the user to send a specified message.
+     * Topic and Message provided
+     * as string parameters by the user
+     */
+    @SimpleFunction
+    public void sendMessage(String parameters, String topic) {
+        //TODO
+    }
+
+    /**
+     * Allows user to connect to ROS master URI.
+     * URI provided as a string parameter
+     */
+    @DesignerProperty
+    public void connectToMaster(String URI) {
+        //TODO
+    }
+
+    /**
+     * Tells the robot to stop moving
+     */
+    @SimpleFunction
+    public void stopRobot() {
+        //TODO
+    }
+
+    /**
+     * Full control
+     */
+    @SimpleFunction
+    public void twist() {
+        //TODO
+    }
+
+    /**
+     * Turn robot
+     */
+    @SimpleFunction
+    public void turn() {
         //TODO
     }
 }
