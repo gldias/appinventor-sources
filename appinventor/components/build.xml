@@ -121,6 +121,14 @@
           description="Copies libraries needed for components into the public build directory">
     <property name="support.dir" location="${lib.dir}/android/support" />
     <property name="support.version" value="28.0.0" />
+    <copy toFile="${public.deps.dir}/apacheXMLRPCClient.jar" file="${lib.dir}/apache-xmlrpc-client/apache_xmlrpc_client-0.3.6.jar" />
+    <copy toFile="${public.deps.dir}/apacheXMLRPCCommon.jar" file="${lib.dir}/apache-xmlrpc-common/apache_xmlrpc_common-0.3.6.jar" />
+    <copy toFile="${public.deps.dir}/commonsHTTPClient.jar" file="${lib.dir}/commons-httpclient/commons-httpclient-3.1.jar" />
+    <copy toFile="${public.deps.dir}/commonsLogging.jar" file="${lib.dir}/commons-logging/commons-logging-1.1.1.jar" />
+    <copy toFile="${public.deps.dir}/messageGeneration.jar" file="${lib.dir}/message-generation/message_generation-0.3.3.jar" />
+    <copy toFile="${public.deps.dir}/stdMsgs.jar" file="${lib.dir}/std-msgs/std_msgs-0.5.10.jar" />
+    <copy toFile="${public.deps.dir}/wsCommonsUtil.jar" file="${lib.dir}/ws-commons-util/ws-commons-util-1.0.2.jar" />
+    <copy toFile="${public.deps.dir}/rosjavaCore.jar" file="${lib.dir}/rosjava/rosjava-0.3.6.jar" />
     <copy toFile="${public.deps.dir}/osmdroid.aar" file="${lib.dir}/osmdroid/osmdroid-5.6.6.aar" />
     <copy toFile="${public.deps.dir}/osmdroid.jar" file="${lib.dir}/osmdroid/osmdroid-5.6.6.jar" />
     <copy toFile="${public.deps.dir}/webrtc.jar"
