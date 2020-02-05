@@ -249,8 +249,8 @@ public class SoundPressureLevel extends AndroidNonvisibleComponent
                 Log.d(LOG_TAG,e.getMessage());
             }
 
-            // TODO The below is old code for comparison to the weighted SPL. Delete once the above is confirmed to work.
-            Log.d(LOG_TAG,"About to run unweighted dB.");
+            // Calculates unweighted dB using the raw sound data.
+            Log.d(LOG_TAG,"About to calculate unweighted dB.");
             //Convert data from mic to pressure in pascals.
             double[] soundSamplePressure = convertMicVoltageToPressure(soundData);
             Log.d(LOG_TAG,"Finished converting unweighted voltage to pressure");
