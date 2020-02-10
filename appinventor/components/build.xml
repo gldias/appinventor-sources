@@ -160,7 +160,7 @@
     <copy toFile="${public.deps.dir}/commons-pool.jar" file="${lib.dir}/commons-pool/commons-pool2-2.0.jar" />
     <copy toFile="${public.deps.dir}/guava-14.0.1.jar" file="${lib.dir}/guava/guava-14.0.1.jar" />
     <copy toFile="${public.deps.dir}/guava-12.0.1.jar" file="${lib.dir}/guava/guava-12.0.1.jar" />
-    <copy toFile="${public.deps.dir}/netty-3.5.3.jar" file="${lib.dir}/netty/netty-3.5.3.jar" />
+    <copy toFile="${public.deps.dir}/netty-3.5.2.jar" file="${lib.dir}/netty/netty-3.5.2.jar" />
     <copy toFile="${public.deps.dir}/rosgraph_msgs-1.11.2.jar" file="${lib.dir}/rosgraph-msgs/rosgraph_msgs-1.11.2.jar" />
     <copy toFile="${public.deps.dir}/core.jar" file="${lib.dir}/QRGenerator/core.jar" />
     <!-- BEGIN Android Support Libraries -->

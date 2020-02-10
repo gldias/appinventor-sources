@@ -65,7 +65,7 @@ public class ros_bridge extends AndroidNonvisibleComponent implements OnStopList
      * Allows user to connect to ROS master URI.
      * URI provided as a string parameter
      */
-    @DesignerProperty
+    @SimpleFunction
     public void connectToMaster(String uri) throws URISyntaxException {
         java.net.URI masterUri = new URI(uri);
 
