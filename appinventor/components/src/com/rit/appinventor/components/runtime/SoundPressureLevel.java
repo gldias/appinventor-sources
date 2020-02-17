@@ -1,3 +1,9 @@
+/**
+ * Extension to measure Sound Pressure Level
+ * 
+ * @author Nathan Oesterle
+ * @author Ryan Connors
+ */
 package com.rit.appinventor.components.runtime;
 
 import android.os.Handler;
