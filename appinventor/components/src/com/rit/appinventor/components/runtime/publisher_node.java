@@ -12,7 +12,16 @@ public class publisher_node extends AbstractNodeMain implements NodeMain {
 
     @Override
     public void onStart(ConnectedNode connectedNode) {
-        //TODO
+        final Publisher<std_msgs.String> command_publisher = connectedNode.newPublisher("topicName", "messageType");
+        final CancellableLoop loop = new CancellableLoop() {
+
+            @Override
+            protected void loop() throws InterruptedException {
+                //loop logic for node goes here
+            }
+        };
+
+        connectedNode.executeCancellableLoop(loop);
     }
 
     @Override
