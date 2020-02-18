@@ -120,14 +120,15 @@
           description="Copies libraries needed for components into the public build directory">
     <property name="support.dir" location="${lib.dir}/android/support" />
     <property name="support.version" value="28.0.0" />
-    <copy toFile="${public.deps.dir}/apacheXMLRPCClient.jar" file="${lib.dir}/apache-xmlrpc-client/apache_xmlrpc_client-0.3.6.jar" />
-    <copy toFile="${public.deps.dir}/apacheXMLRPCCommon.jar" file="${lib.dir}/apache-xmlrpc-common/apache_xmlrpc_common-0.3.6.jar" />
-    <copy toFile="${public.deps.dir}/commonsHTTPClient.jar" file="${lib.dir}/commons-httpclient/commons-httpclient-3.1.jar" />
-    <copy toFile="${public.deps.dir}/commonsLogging.jar" file="${lib.dir}/commons-logging/commons-logging-1.1.1.jar" />
-    <copy toFile="${public.deps.dir}/messageGeneration.jar" file="${lib.dir}/message-generation/message_generation-0.3.3.jar" />
-    <copy toFile="${public.deps.dir}/stdMsgs.jar" file="${lib.dir}/std-msgs/std_msgs-0.5.10.jar" />
-    <copy toFile="${public.deps.dir}/wsCommonsUtil.jar" file="${lib.dir}/ws-commons-util/ws-commons-util-1.0.2.jar" />
-    <copy toFile="${public.deps.dir}/rosjavaCore.jar" file="${lib.dir}/rosjava/rosjava-0.3.6.jar" />
+    <copy toFile="${public.deps.dir}/apache_xmlrpc_client-0.3.6.jar" file="${lib.dir}/apache-xmlrpc-client/apache_xmlrpc_client-0.3.6.jar" />
+    <copy toFile="${public.deps.dir}/apache_xmlrpc_common-0.3.6.jar" file="${lib.dir}/apache-xmlrpc-common/apache_xmlrpc_common-0.3.6.jar" />
+    <copy toFile="${public.deps.dir}/apache_xmlrpc_server-0.3.6.jar" file="${lib.dir}/apache-xmlrpc-server/apache_xmlrpc_server-0.3.6.jar" />
+    <copy toFile="${public.deps.dir}/commons-httpclient-3.1.jar" file="${lib.dir}/commons-httpclient/commons-httpclient-3.1.jar" />
+    <copy toFile="${public.deps.dir}/commons-logging-1.1.1.jar" file="${lib.dir}/commons-logging/commons-logging-1.1.1.jar" />
+    <copy toFile="${public.deps.dir}/message_generation-0.3.3.jar" file="${lib.dir}/message-generation/message_generation-0.3.3.jar" />
+    <copy toFile="${public.deps.dir}/std_msgs-0.5.10.jar" file="${lib.dir}/std-msgs/std_msgs-0.5.10.jar" />
+    <copy toFile="${public.deps.dir}/ws-commons-util-1.0.2.jar" file="${lib.dir}/ws-commons-util/ws-commons-util-1.0.2.jar" />
+    <copy toFile="${public.deps.dir}/rosjava-0.3.6.jar" file="${lib.dir}/rosjava/rosjava-0.3.6.jar" />
     <copy toFile="${public.deps.dir}/osmdroid.aar" file="${lib.dir}/osmdroid/osmdroid-5.6.6.aar" />
     <copy toFile="${public.deps.dir}/osmdroid.jar" file="${lib.dir}/osmdroid/osmdroid-5.6.6.jar" />
     <copy toFile="${public.deps.dir}/webrtc.jar"
@@ -157,7 +158,12 @@
     <copy toFile="${public.deps.dir}/google-oauth-client-beta.jar" file="${lib.dir}/oauth/google-oauth-client-1.10.1-beta.jar" />
     <copy toFile="${public.deps.dir}/jedis.jar" file="${lib.dir}/jedis/jedis-3.0.0-SNAPSHOT-jar-with-dependencies.jar" />
     <copy toFile="${public.deps.dir}/commons-pool.jar" file="${lib.dir}/commons-pool/commons-pool2-2.0.jar" />
+    <copy toFile="${public.deps.dir}/commons-pool-1.6.jar" file="${lib.dir}/commons-pool/commons-pool-1.6.jar" />
     <copy toFile="${public.deps.dir}/guava-14.0.1.jar" file="${lib.dir}/guava/guava-14.0.1.jar" />
+    <copy toFile="${public.deps.dir}/guava-12.0.1.jar" file="${lib.dir}/guava/guava-12.0.1.jar" />
+    <copy toFile="${public.deps.dir}/netty-3.5.2.jar" file="${lib.dir}/netty/netty-3.5.2.jar" />
+    <copy toFile="${public.deps.dir}/commons-codec-1.3.jar" file="${lib.dir}/commons-codec/commons-codec-1.3.jar" />
+    <copy toFile="${public.deps.dir}/rosgraph_msgs-1.11.2.jar" file="${lib.dir}/rosgraph-msgs/rosgraph_msgs-1.11.2.jar" />
     <copy toFile="${public.deps.dir}/core.jar" file="${lib.dir}/QRGenerator/core.jar" />
     <!-- BEGIN Android Support Libraries -->
     <copy todir="${public.deps.dir}/">
