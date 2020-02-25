@@ -1,3 +1,9 @@
+/**
+ * Extension to measure Sound Pressure Level
+ *
+ * @author Nathan Oesterle
+ * @author Ryan Connors
+ */
 package com.rit.appinventor.components.runtime;
 
 import android.os.Handler;
@@ -11,6 +17,7 @@ import com.google.appinventor.components.runtime.*;
 import android.Manifest;
 import android.media.AudioRecord;
 import android.content.pm.PackageManager;
+import com.google.appinventor.components.runtime.util.OnInitializeListener;
 
 import static android.media.AudioFormat.CHANNEL_IN_MONO;
 import static android.media.AudioFormat.ENCODING_PCM_16BIT;
@@ -24,7 +31,7 @@ import static android.media.MediaRecorder.AudioSource.MIC;
 @SimpleObject(external = true)
 @UsesPermissions(permissionNames = "android.permission.RECORD_AUDIO")
 public class SoundPressureLevel extends AndroidNonvisibleComponent
-        implements OnStopListener, OnResumeListener, Deleteable {
+        implements OnStopListener, OnResumeListener, Deleteable, OnInitializeListener {
 
     private final static String LOG_TAG = "SoundPressureLevel";
     private boolean isEnabled;
@@ -63,6 +70,7 @@ public class SoundPressureLevel extends AndroidNonvisibleComponent
         recorder = new AudioRecord(MIC, sampleRateInHz, channelConfig, audioFormat, minBufferSize);
         form.registerForOnResume(this);
         form.registerForOnStop(this);
+        form.registerForOnInitialize(this);
         Enabled(true);
         splHandler = new Handler();
         soundChecker = new Thread(new Runnable(){
@@ -102,6 +110,18 @@ public class SoundPressureLevel extends AndroidNonvisibleComponent
         }
         soundChecker.start();
         Log.d(LOG_TAG, "spl created");
+    }
+
+    @Override
+    public void onInitialize(){
+        Log.d(LOG_TAG,"spl onInitialize");
+        if(!checkPermissions()){
+            Log.d(LOG_TAG,"spl permissions not granted yet");
+            requestPermission("onInitialize");
+        }
+        else {
+            Log.d(LOG_TAG,"spl permissions granted already");
+        }
     }
 
     @Override
@@ -598,5 +618,28 @@ public class SoundPressureLevel extends AndroidNonvisibleComponent
         synchronized (recordingLock) {
             return this.isRecording;
         }
+    }
+
+    private void requestPermission(final String caller) {
+        final SoundPressureLevel me = this;
+        form.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                form.askPermission(Manifest.permission.RECORD_AUDIO,
+                        new PermissionResultHandler() {
+                            @Override
+                            public void HandlePermissionResponse(String permission, boolean granted) {
+                                if (granted) {
+                                    hasPermission = true;
+                                    Log.d(LOG_TAG,"spl RECORD_AUDIO Permission granted");
+                                } else {
+                                    form.dispatchPermissionDeniedEvent(me, caller,
+                                            Manifest.permission.RECORD_AUDIO);
+                                    Log.d(LOG_TAG,"spl RECORD_AUDIO Permission denied");
+                                }
+                            }
+                        });
+            }
+        });
     }
 }
