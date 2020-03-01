@@ -185,6 +185,7 @@ public class DexExecTask  {
         commandLineList.add(mExecutable);
 
         commandLineList.add("--dex");
+        commandLineList.add("--multi-dex");
         commandLineList.add("--positions=lines");
 
         if (mNoLocals) {

@@ -46,15 +46,7 @@ import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.Reader;
 import java.io.Writer;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.logging.Level;
@@ -1405,13 +1397,19 @@ public final class Compiler {
    */
   private boolean runApkBuilder(String apkAbsolutePath, String zipArchive, String dexedClassesDir) {
     try {
+      final File file = new File(dexedClassesDir);
       ApkBuilder apkBuilder =
           new ApkBuilder(apkAbsolutePath, zipArchive,
             dexedClassesDir + File.separator + "classes.dex", null, System.out);
-      if (hasSecondDex) {
+      for(File tmpFile: Objects.requireNonNull(file.listFiles())) {
+        if(!tmpFile.getName().equals("classes.dex") && tmpFile.getName().endsWith("dex")) {
+          apkBuilder.addFile(tmpFile, tmpFile.getName());
+        }
+      }
+      /*if (hasSecondDex) {
         apkBuilder.addFile(new File(dexedClassesDir + File.separator + "classes2.dex"),
           "classes2.dex");
-      }
+      }*/
       if (nativeLibsNeeded.size() != 0) { // Need to add native libraries...
         apkBuilder.addNativeLibraries(libsDir);
       }
@@ -1903,7 +1901,7 @@ public final class Compiler {
 
     DexExecTask dexTask = new DexExecTask();
     dexTask.setExecutable(getResource(DX_JAR));
-    dexTask.setOutput(dexedClassesDir + File.separator + "classes.dex");
+    dexTask.setOutput(dexedClassesDir + File.separator);
     dexTask.setChildProcessRamMb(childProcessRamMb);
     if (dexCacheDir == null) {
       dexTask.setDisableDexMerger(true);
@@ -1921,7 +1919,7 @@ public final class Compiler {
       dxSuccess = dexTask.execute(inputList);
       if (dxSuccess && (class2List.size() > 0)) {
         setProgress(60);
-        dexTask.setOutput(dexedClassesDir + File.separator + "classes2.dex");
+        dexTask.setOutput(dexedClassesDir + File.separator);
         inputList = new ArrayList<File>();
         dxSuccess = dexTask.execute(class2List);
         setProgress(75);
