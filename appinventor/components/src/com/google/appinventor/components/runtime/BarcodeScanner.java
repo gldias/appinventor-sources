@@ -50,7 +50,7 @@ import android.Manifest;
                      windowSoftInputMode = "stateAlwaysHidden")
 })
 @UsesPermissions(permissionNames = "android.permission.CAMERA")
-@UsesLibraries(libraries = "Barcode.jar,core.jar,ros.jar")
+@UsesLibraries(libraries = "Barcode.jar,core.jar")
 public class BarcodeScanner extends AndroidNonvisibleComponent
   implements ActivityResultListener, Component {
 

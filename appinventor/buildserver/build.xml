@@ -226,7 +226,7 @@
       <sysproperty key="file.encoding" value="UTF-8" />
       <jvmarg value="-Djava.awt.headless=true" />
       <arg value="--childProcessRamMb" />
-      <arg value="1024" />
+      <arg value="2048" />
       <arg value="--inputZipFile" />
       <arg value="${local.build.dir}/aiplayapp.zip" />
       <arg value="--userName" />
@@ -239,8 +239,8 @@
       <arg value="${public.build.dir}" />
       <arg value="--outputFileName" />
       <arg value="MITAI2Companion-full.apk" />
-      <arg value="--dexCacheDir" />
-      <arg value="${public.build.dir}/dexCache" />
+      <!--<arg value="- -dexCacheDir" />
+      <arg value="${public.build.dir}/dexCache" />-->
     </java>
   </target>
 
@@ -264,7 +264,7 @@
       <sysproperty key="file.encoding" value="UTF-8" />
       <jvmarg value="-Djava.awt.headless=true" />
       <arg value="--childProcessRamMb" />
-      <arg value="1024" />
+      <arg value="2048" />
       <arg value="--inputZipFile" />
       <arg value="${local.build.dir}/aiplayapp.zip" />
       <arg value="--userName" />
@@ -278,8 +278,8 @@
       <arg value="${public.build.dir}" />
       <arg value="--outputFileName" />
       <arg value="Emulator.apk" />
-      <arg value="--dexCacheDir" />
-      <arg value="${public.build.dir}/dexCache" />
+      <!--<arg value="- -dexCacheDir" />
+      <arg value="${public.build.dir}/dexCache" />-->
     </java>
   </target>
 
@@ -308,8 +308,10 @@
       </classpath>
       <sysproperty key="file.encoding" value="UTF-8" />
       <jvmarg value="-Djava.awt.headless=true" />
-      <arg value="--dexCacheDir" />
-      <arg value="${public.build.dir}/dexCache" />
+      <arg value="--childProcessRamMb" />
+      <arg value="2048" />
+      <!--<arg value="- -dexCacheDir" />
+      <arg value="${public.build.dir}/dexCache" />-->
       <arg value="--shutdownToken" />
       <arg value="token" />
     </java>
@@ -334,8 +336,8 @@
       <arg value="${user.name}" />
       <arg value="--outputDir" />
       <arg value="${output.dir}" />
-      <arg value="--dexCacheDir" />
-      <arg value="${public.build.dir}/dexCache" />
+      <!--<arg value="- -dexCacheDir" />
+      <arg value="${public.build.dir}/dexCache" />-->
     </java>
   </target>
 
