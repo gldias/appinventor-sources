@@ -1889,11 +1889,9 @@ public final class Compiler {
     } else {
       offset = 0;               // Add NO libraries the second time through!
     }
-    for (int i = 0; i < offset; i++) {
-      inputList.add(libList.get(i));
-    }
+    inputList.addAll(libList);
 
-    if (libList.size() - offset > 0) { // Any left over for classes2?
+    if (false && libList.size() - offset > 0) { // Any left over for classes2?
       for (int i = offset; i < libList.size(); i++) {
         class2List.add(libList.get(i));
       }

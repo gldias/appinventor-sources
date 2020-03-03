@@ -1,4 +1,4 @@
-package edu.rit.appinventor.components.runtime;
+package com.google.appinventor.components.runtime;
 
 
 import org.ros.node.NodeConfiguration;
