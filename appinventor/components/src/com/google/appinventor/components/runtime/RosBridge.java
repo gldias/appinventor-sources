@@ -25,7 +25,7 @@ import org.ros.node.topic.Publisher;
 import java.net.URI;
 import java.net.URISyntaxException;
 
-@RequiresApi(api = Build.VERSION_CODES.CUPCAKE)
+@RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN)
 @UsesPermissions(permissionNames = "android.permission.INTERNET")
 @DesignerComponent(version = YaVersion.BARCODESCANNER_COMPONENT_VERSION,
         description = "Component for using the ROS interface",
