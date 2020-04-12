@@ -2,10 +2,7 @@ package com.rit.appinventor.components.runtime;
 
 import android.os.Build;
 import android.support.annotation.RequiresApi;
-import com.google.appinventor.components.annotations.DesignerComponent;
-import com.google.appinventor.components.annotations.DesignerProperty;
-import com.google.appinventor.components.annotations.SimpleFunction;
-import com.google.appinventor.components.annotations.SimpleObject;
+import com.google.appinventor.components.annotations.*;
 import com.google.appinventor.components.common.ComponentCategory;
 import com.google.appinventor.components.runtime.AndroidNonvisibleComponent;
 import com.google.appinventor.components.runtime.Deleteable;
@@ -42,20 +39,10 @@ public class ros_bridge extends AndroidNonvisibleComponent implements OnStopList
     }
 
     /**
-     * Allows the user to send a specified message.
-     * Topic and Message provided
-     * as string parameters by the user
-     */
-    @SimpleFunction
-    public void sendMessage(String parameters, String topic) {
-        //TODO
-    }
-
-    /**
      * Allows user to connect to ROS master URI.
      * URI provided as a string parameter
      */
-    @DesignerProperty
+    @SimpleFunction
     public void connectToMaster(String URI) {
         //TODO
     }
@@ -69,18 +56,57 @@ public class ros_bridge extends AndroidNonvisibleComponent implements OnStopList
     }
 
     /**
-     * Full control
+     * Full Control
+     * @param speed the speed at which the robot should move
+     * @param angle the angle the robot should face
      */
     @SimpleFunction
-    public void twist() {
+    public void twist(float speed, float angle) {
         //TODO
     }
 
     /**
-     * Turn robot
+     * Spin clockwise indefinitely
+     * @param speed the speed at which the robot should spin at
      */
     @SimpleFunction
-    public void turn() {
+    public void spinClockwiseIndefinitely(float speed) {
+        //TODO
+    }
+
+    /**
+     * Spin counter-clockwise indefinitely
+     * @param speed the speed at which the robot should spin at
+     */
+    @SimpleFunction
+    public void spinCounterClockwiseIndefinitely(float speed) {
+        //TODO
+    }
+
+    /**
+     * Move forward indefinitely
+     * @param speed the speed at which the robot should move at
+     */
+    @SimpleFunction
+    public void moveForwardIndefinitely(float speed) {
+        //TODO
+    }
+
+    /**
+     * Move backwards indefinitely
+     * @param speed the speed at which the robot should move at
+     */
+    @SimpleFunction
+    public void moveBackwardIndefinitely(float speed) {
+        //TODO
+    }
+
+    /**
+     * Turn the robot to face a given angle
+     * @param angle the angle that the robot should face
+     */
+    @SimpleFunction
+    public void turn(float angle) {
         //TODO
     }
 }
